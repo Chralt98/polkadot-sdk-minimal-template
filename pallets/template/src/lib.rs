@@ -9,7 +9,7 @@ pub use pallet::*;
 
 pub type Balance = u128;
 
-#[frame::pallet]
+#[frame::pallet(dev_mode)]
 pub mod pallet {
     use super::*;
 
