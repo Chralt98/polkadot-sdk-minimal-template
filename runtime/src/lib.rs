@@ -160,7 +160,9 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 // Implements the types required for the template pallet.
-impl pallet_minimal_template::Config for Runtime {}
+impl pallet_minimal_template::Config for Runtime {
+	
+}
 
 type Block = frame::runtime::types_common::BlockOf<Runtime, SignedExtra>;
 type Header = HeaderFor<Runtime>;
