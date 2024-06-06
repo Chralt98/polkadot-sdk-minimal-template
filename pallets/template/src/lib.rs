@@ -7,14 +7,16 @@ use frame::prelude::*;
 // Re-export all pallet parts, this is needed to properly import the pallet into the runtime.
 pub use pallet::*;
 
-pub type Balance = u128;
-
 #[frame::pallet(dev_mode)]
 pub mod pallet {
     use super::*;
 
+	pub type Balance = u128;
+
     #[pallet::config]
-    pub trait Config: frame_system::Config {}
+    pub trait Config: frame_system::Config {
+        fn ed() -> Balance;
+    }
 
     #[pallet::pallet]
     pub struct Pallet<T>(_);
@@ -54,8 +56,10 @@ pub mod pallet {
 
             // ensure sender has enough balance, and if so, calculate what is left after `amount`.
             let sender_balance = Balances::<T>::get(&sender).ok_or("NonExistentAccount")?;
-			ensure!(sender_balance >= amount, "InsufficientBalance");
-            let reminder = sender_balance.checked_sub(amount).ok_or("InsufficientBalance")?;
+            ensure!(sender_balance >= amount, "InsufficientBalance");
+            let reminder = sender_balance
+                .checked_sub(amount)
+                .ok_or("InsufficientBalance")?;
 
             // update sender and dest balances.
             Balances::<T>::mutate(dest, |b| *b = Some(b.unwrap_or(0) + amount));
@@ -63,5 +67,65 @@ pub mod pallet {
 
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::pallet as pallet_currency;
+    use super::pallet::*;
+    use frame::testing_prelude::*;
+
+    construct_runtime!(
+        pub enum Runtime {
+            System: frame_system,
+            Currency: pallet_currency,
+        }
+    );
+
+    #[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
+    impl frame_system::Config for Runtime {
+        type Block = MockBlock<Runtime>;
+        // within pallet we just said `<T as frame_system::Config>::AccountId`, now we
+        // finally specified it.
+        type AccountId = u64;
+    }
+
+    impl pallet_currency::Config for Runtime {
+        fn ed() -> Balance {
+            5
+        }
+    }
+
+    #[test]
+    fn mint_works() {
+        TestState::new_empty().execute_with(|| {
+            // populate a storage item
+            // pallet_currency::Balances::<Runtime>::insert(&42u64, 42);
+
+			assert_eq!(pallet_currency::Balances::<Runtime>::get(1), None);
+
+            // execute a transaction
+            assert!(
+                pallet_currency::Pallet::<Runtime>::mint_unsafe(RuntimeOrigin::signed(1), 0, 42)
+                    .is_ok()
+            );
+
+			assert_eq!(pallet_currency::Balances::<Runtime>::get(1), Some(42));
+        });
+    }
+
+    #[test]
+    fn mint_into_existing_fails() {
+        TestState::new_empty().execute_with(|| {
+            todo!();
+        });
+    }
+
+    #[test]
+    fn mint_below_ed_fails() {
+        TestState::new_empty().execute_with(|| {
+            todo!();
+        });
     }
 }

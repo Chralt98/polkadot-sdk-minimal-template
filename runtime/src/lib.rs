@@ -161,7 +161,9 @@ impl pallet_transaction_payment::Config for Runtime {
 
 // Implements the types required for the template pallet.
 impl pallet_minimal_template::Config for Runtime {
-	
+	fn ed() -> u128 {
+		5u128
+	}
 }
 
 type Block = frame::runtime::types_common::BlockOf<Runtime, SignedExtra>;
